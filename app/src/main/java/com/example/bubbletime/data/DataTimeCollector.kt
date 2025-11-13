@@ -13,8 +13,15 @@ object DateTimeCollector {
     }
 
     fun getTimeDifference(region1: String, region2: String): Long {
-        val t1 = ZonedDateTime.now(ZoneId.of(region1))
-        val t2 = ZonedDateTime.now(ZoneId.of(region2))
-        return Duration.between(t1, t2).toHours()
+        val time1 = ZonedDateTime.now(ZoneId.of(region1)).toLocalTime()
+        val time2 = ZonedDateTime.now(ZoneId.of(region2)).toLocalTime()
+
+        var diff = Duration.between(time1, time2).toHours()
+
+        if (diff > 12) diff -= 24
+        if (diff < -12) diff += 24
+
+        return diff
     }
+
 }
