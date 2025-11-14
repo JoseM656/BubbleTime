@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.bubbletime.data.DateTimeCollector
 import com.example.bubbletime.model.Bubble
-import com.example.bubbletime.screens.TimeZoneSelector
+import com.example.bubbletime.screens.TimeZoneSearchBar
 import androidx.compose.foundation.clickable
 
 
@@ -26,14 +26,37 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun BubbleTimeApp() {
+
     var region1 by remember { mutableStateOf("") }
     var region2 by remember { mutableStateOf("") }
+
+    // ¿Qué campo se está editando actualmente?
+    var selectedField by remember { mutableStateOf<String?>(null) }
+
+    // Resultado final
     var result by remember { mutableStateOf("") }
 
-    // Controlan si se muestra el selector
-    var showSelectorFor by remember { mutableStateOf<String?>(null) }
+    // Zona actualmente elegida desde la barra superior
+    var selectedZone by remember { mutableStateOf("") }
 
     Column(Modifier.padding(16.dp)) {
+
+        // -------------------------
+        //  BARRA SUPERIOR DE BUSQUEDA
+        // -------------------------
+        TimeZoneSearchBar(
+            onZoneSelected = { zone ->
+                selectedZone = zone
+
+                if (selectedField == "region1") region1 = zone
+                if (selectedField == "region2") region2 = zone
+
+                selectedField = null // cerrar selección
+            }
+        )
+
+        Spacer(Modifier.height(16.dp))
+
 
         Text("Comparar zonas horarias", style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(16.dp))
@@ -41,10 +64,10 @@ fun BubbleTimeApp() {
         // ---- CAMPO 1 ----
         OutlinedTextField(
             value = region1,
-            onValueChange = { },
+            onValueChange = {},
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { showSelectorFor = "region1" },
+                .clickable { selectedField = "region1" },
             readOnly = true,
             label = { Text("Región 1") },
             placeholder = { Text("Elegir zona horaria") }
@@ -55,10 +78,10 @@ fun BubbleTimeApp() {
         // ---- CAMPO 2 ----
         OutlinedTextField(
             value = region2,
-            onValueChange = { },
+            onValueChange = {},
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { showSelectorFor = "region2" },
+                .clickable { selectedField = "region2" },
             readOnly = true,
             label = { Text("Región 2") },
             placeholder = { Text("Elegir zona horaria") }
@@ -91,22 +114,8 @@ fun BubbleTimeApp() {
 
         Spacer(Modifier.height(16.dp))
         Text(result)
-
-        // ------ SELECTOR ------
-        if (showSelectorFor != null) {
-            AlertDialog(
-                onDismissRequest = { showSelectorFor = null },
-                confirmButton = {},
-                text = {
-                    TimeZoneSelector { selected ->
-                        if (showSelectorFor == "region1") region1 = selected
-                        if (showSelectorFor == "region2") region2 = selected
-                        showSelectorFor = null
-                    }
-                }
-            )
-        }
     }
 }
+
 
 

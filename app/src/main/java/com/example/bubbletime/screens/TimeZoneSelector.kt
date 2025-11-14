@@ -11,34 +11,48 @@ import androidx.compose.ui.unit.dp
 import java.time.ZoneId
 
 @Composable
-fun TimeZoneSelector(onZoneSelected: (String) -> Unit) {
+fun TimeZoneSearchBar(onZoneSelected: (String) -> Unit) {
 
-    var searchQuery by remember { mutableStateOf("") }
+    var query by remember { mutableStateOf("") }
 
-    val allZones = remember { ZoneId.getAvailableZoneIds().toList().sorted() }
-    val filteredZones = allZones.filter { it.contains(searchQuery, ignoreCase = true) }
+    val allZones = remember { ZoneId.getAvailableZoneIds().sorted().toList() }
+    val filteredZones = remember(query) {
+        allZones.filter { it.contains(query, ignoreCase = true) }
+    }
 
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
+    Column {
 
-        TextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
+        // ---- SEARCHBAR ----
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            modifier = Modifier.fillMaxWidth(),
             label = { Text("Buscar zona horaria") },
-            modifier = Modifier.fillMaxWidth()
+            placeholder = { Text("Ej: America/Argentina/Buenos_Aires") }
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        // ---- LISTA SOLO SI SE ESCRIBE ----
+        if (query.isNotBlank()) {
+            Spacer(Modifier.height(8.dp))
 
-        LazyColumn {
-            items(filteredZones) { zone ->
-                Text(
-                    text = zone,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onZoneSelected(zone) }
-                        .padding(12.dp)
-                )
-                Divider()
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(250.dp) // Evita scroll infinito
+            ) {
+                items(filteredZones) { zone ->
+                    Text(
+                        text = zone,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onZoneSelected(zone)
+                                query = "" // Ocultar lista
+                            }
+                            .padding(12.dp)
+                    )
+                    Divider()
+                }
             }
         }
     }
