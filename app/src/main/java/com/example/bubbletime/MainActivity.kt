@@ -3,11 +3,10 @@ package com.example.bubbletime
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.border
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,15 +14,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.bubbletime.screens.TimeZoneSearchBar
 import com.example.bubbletime.viewmodel.BubbleTimeViewModel
-import androidx.compose.foundation.border
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
+import com.example.bubbletime.data.local.AppDatabase
+import com.example.bubbletime.repository.BubbleRepository
 
 class MainActivity : ComponentActivity() {
-    private val viewModel: BubbleTimeViewModel by viewModels()
+
+    private lateinit var viewModel: BubbleTimeViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Inicializar la base de datos y el repository
+        val database = AppDatabase.getDatabase(applicationContext)
+        val repository = BubbleRepository(
+            bubbleDao = database.bubbleDao(),
+            linkDao = database.linkDao()
+        )
+
+        // Crear el ViewModel con el repository
+        viewModel = BubbleTimeViewModel(repository)
+
         setContent {
             BubbleTimeApp(viewModel)
         }
@@ -33,6 +43,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun BubbleTimeApp(viewModel: BubbleTimeViewModel) {
     var showSearchBar by remember { mutableStateOf(false) }
+
+    // Observar estados del ViewModel
+    val bubbles by viewModel.bubbles.collectAsState()
+    val links by viewModel.links.collectAsState()
 
     Column(
         modifier = Modifier
@@ -75,7 +89,7 @@ fun BubbleTimeApp(viewModel: BubbleTimeViewModel) {
         // -------------------------
         // INSTRUCCIONES
         // -------------------------
-        if (viewModel.bubbles.isEmpty()) {
+        if (bubbles.isEmpty()) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -93,6 +107,8 @@ fun BubbleTimeApp(viewModel: BubbleTimeViewModel) {
                             1. Toca "+ Agregar" para buscar zonas horarias
                             2. Agrega varias burbujas
                             3. Toca dos burbujas para conectarlas y ver la diferencia horaria
+                            
+                            💾 Tus burbujas se guardan automáticamente
                         """.trimIndent()
                     )
                 }
@@ -117,7 +133,7 @@ fun BubbleTimeApp(viewModel: BubbleTimeViewModel) {
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(viewModel.bubbles, key = { it.id }) { bubble ->
+            items(bubbles, key = { it.id }) { bubble ->
                 BubbleCard(
                     bubble = bubble,
                     isSelected = viewModel.selectedBubbleForLink?.id == bubble.id,
@@ -130,7 +146,7 @@ fun BubbleTimeApp(viewModel: BubbleTimeViewModel) {
         // -------------------------
         // LISTA DE CONEXIONES
         // -------------------------
-        if (viewModel.links.isNotEmpty()) {
+        if (links.isNotEmpty()) {
             Spacer(Modifier.height(16.dp))
             Text(
                 text = "Conexiones",
@@ -142,7 +158,7 @@ fun BubbleTimeApp(viewModel: BubbleTimeViewModel) {
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(viewModel.links, key = { it.id }) { link ->
+                items(links, key = { it.id }) { link ->
                     LinkCard(
                         link = link,
                         onDeleteClick = { viewModel.removeLink(link) }
@@ -158,7 +174,7 @@ fun BubbleTimeApp(viewModel: BubbleTimeViewModel) {
         Button(
             onClick = { viewModel.updateAllTimes() },
             modifier = Modifier.fillMaxWidth(),
-            enabled = viewModel.bubbles.isNotEmpty()
+            enabled = bubbles.isNotEmpty()
         ) {
             Text("🔄 Actualizar horarios")
         }
