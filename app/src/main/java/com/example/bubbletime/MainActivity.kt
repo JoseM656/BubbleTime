@@ -3,6 +3,7 @@ package com.example.bubbletime
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,6 +12,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.bubbletime.screens.TimeZoneSearchBar
 import com.example.bubbletime.viewmodel.BubbleTimeViewModel
@@ -48,137 +51,154 @@ fun BubbleTimeApp(viewModel: BubbleTimeViewModel) {
     val bubbles by viewModel.bubbles.collectAsState()
     val links by viewModel.links.collectAsState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
+    // ⭐ Box permite superponer elementos (fondo + contenido)
+    Box(modifier = Modifier.fillMaxSize()) {
+
         // -------------------------
-        // TÍTULO Y BOTÓN AGREGAR
+        // FONDO DE PANTALLA
         // -------------------------
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Image(
+            painter = painterResource(id = R.drawable.background),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop // Recorta para llenar toda la pantalla
+        )
+
+        // -------------------------
+        // CONTENIDO PRINCIPAL
+        // -------------------------
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            Text(
-                text = "Bubble Time",
-                style = MaterialTheme.typography.headlineMedium
-            )
-
-            Button(onClick = { showSearchBar = !showSearchBar }) {
-                Text(if (showSearchBar) "Cancelar" else "+ Agregar")
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        // -------------------------
-        // BARRA DE BÚSQUEDA
-        // -------------------------
-        if (showSearchBar) {
-            TimeZoneSearchBar(
-                onZoneSelected = { zone ->
-                    viewModel.addBubble(zone)
-                    showSearchBar = false
-                }
-            )
-            Spacer(Modifier.height(16.dp))
-        }
-
-        // -------------------------
-        // INSTRUCCIONES
-        // -------------------------
-        if (bubbles.isEmpty()) {
-            Card(
+            // -------------------------
+            // TÍTULO Y BOTÓN AGREGAR
+            // -------------------------
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(Modifier.padding(16.dp)) {
-                    Text(
-                        text = "👋 ¡Bienvenido a Bubble Time!",
-                        style = MaterialTheme.typography.titleMedium
+                Text(
+                    text = "Bubble Time",
+                    style = MaterialTheme.typography.headlineMedium
+                )
+
+                Button(onClick = { showSearchBar = !showSearchBar }) {
+                    Text(if (showSearchBar) "Cancelar" else "+ Agregar")
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // -------------------------
+            // BARRA DE BÚSQUEDA
+            // -------------------------
+            if (showSearchBar) {
+                TimeZoneSearchBar(
+                    onZoneSelected = { zone ->
+                        viewModel.addBubble(zone)
+                        showSearchBar = false
+                    }
+                )
+                Spacer(Modifier.height(16.dp))
+            }
+
+            // -------------------------
+            // INSTRUCCIONES
+            // -------------------------
+            if (bubbles.isEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
                     )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = """
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text(
+                            text = "👋 ¡Bienvenido a Bubble Time!",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = """
                             1. Toca "+ Agregar" para buscar zonas horarias
                             2. Agrega varias burbujas
                             3. Toca dos burbujas para conectarlas y ver la diferencia horaria
                             
                             💾 Tus burbujas se guardan automáticamente
                         """.trimIndent()
-                    )
+                        )
+                    }
                 }
-            }
-        } else {
-            Text(
-                text = if (viewModel.selectedBubbleForLink != null)
-                    "Selecciona otra burbuja para conectar"
-                else
-                    "Toca dos burbujas para compararlas",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        // -------------------------
-        // LISTA DE BURBUJAS
-        // -------------------------
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(bubbles, key = { it.id }) { bubble ->
-                BubbleCard(
-                    bubble = bubble,
-                    isSelected = viewModel.selectedBubbleForLink?.id == bubble.id,
-                    onBubbleClick = { viewModel.toggleBubbleSelection(bubble) },
-                    onDeleteClick = { viewModel.removeBubble(bubble) }
+            } else {
+                Text(
+                    text = if (viewModel.selectedBubbleForLink != null)
+                        "Selecciona otra burbuja para conectar"
+                    else
+                        "Toca dos burbujas para compararlas",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-        }
 
-        // -------------------------
-        // LISTA DE CONEXIONES
-        // -------------------------
-        if (links.isNotEmpty()) {
             Spacer(Modifier.height(16.dp))
-            Text(
-                text = "Conexiones",
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(Modifier.height(8.dp))
 
+            // -------------------------
+            // LISTA DE BURBUJAS
+            // -------------------------
             LazyColumn(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(links, key = { it.id }) { link ->
-                    LinkCard(
-                        link = link,
-                        onDeleteClick = { viewModel.removeLink(link) }
+                items(bubbles, key = { it.id }) { bubble ->
+                    BubbleCard(
+                        bubble = bubble,
+                        isSelected = viewModel.selectedBubbleForLink?.id == bubble.id,
+                        onBubbleClick = { viewModel.toggleBubbleSelection(bubble) },
+                        onDeleteClick = { viewModel.removeBubble(bubble) }
                     )
                 }
             }
-        }
 
-        // -------------------------
-        // BOTÓN ACTUALIZAR
-        // -------------------------
-        Spacer(Modifier.height(16.dp))
-        Button(
-            onClick = { viewModel.updateAllTimes() },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = bubbles.isNotEmpty()
-        ) {
-            Text("🔄 Actualizar horarios")
+            // -------------------------
+            // LISTA DE CONEXIONES
+            // -------------------------
+            if (links.isNotEmpty()) {
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = "Conexiones",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Spacer(Modifier.height(8.dp))
+
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(links, key = { it.id }) { link ->
+                        LinkCard(
+                            link = link,
+                            onDeleteClick = { viewModel.removeLink(link) }
+                        )
+                    }
+                }
+            }
+
+            // -------------------------
+            // BOTÓN ACTUALIZAR
+            // -------------------------
+            Spacer(Modifier.height(16.dp))
+            Button(
+                onClick = { viewModel.updateAllTimes() },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = bubbles.isNotEmpty()
+            ) {
+                Text("🔄 Actualizar horarios")
+            }
         }
-    }
+    } // Cierra Box
 }
 
 @Composable
